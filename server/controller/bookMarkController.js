@@ -1,11 +1,10 @@
 import prisma from "../lib/prisma.js";
-import { sessionOptions } from "../lib/sessionOptions.js";
-import { getIronSession } from "iron-session";
+
 
 export async function saveBookmark(req, res) {
   try {
-    const session = await getIronSession(req, res, sessionOptions);
-    const userId = session.id;
+    const userId = req.userId;
+
     const postId = req.body.postId;
 
     const bookmark = await prisma.bookmark.findUnique({

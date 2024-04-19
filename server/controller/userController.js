@@ -1,6 +1,4 @@
 import prisma from "../lib/prisma.js";
-import { sessionOptions } from "../lib/sessionOptions.js";
-import { getIronSession } from "iron-session";
 import bcrypt from "bcrypt";
 
 export async function getUsers(req, res) {
@@ -31,15 +29,14 @@ export async function getUser(req, res) {
 export async function updateUser(req, res) {
   try {
     const id = req.params.id;
-    const session = await getIronSession(req, res, sessionOptions);
+    const userId = req.userId;
     const body = req.body;
     if (body.password) {
       const genSalt = await bcrypt.genSalt(10);
       body.password = await bcrypt.hash(body.password, genSalt);
     }
 
-    if (!session.id || session.id !== id)
-      return res.status(401).json("Not authenticated");
+
 
     const updatedUser = await prisma.user.update({
       where: { id },
@@ -55,10 +52,9 @@ export async function updateUser(req, res) {
 export async function deleteUser(req, res) {
   const id = req.params.id;
   try {
-    const session = await getIronSession(req, res, sessionOptions);
+    const userId = req.userId;
 
-    if (!session.id || session.id !== id)
-      return res.status(401).json("Not authenticated");
+    if (userId !== id) return res.status(401).json("Not authenticated");
     await prisma.user.delete({ where: { id } });
     res.json("deleted");
   } catch (error) {
@@ -68,9 +64,8 @@ export async function deleteUser(req, res) {
 }
 export async function savedPost(req, res) {
   try {
-    const session = await getIronSession(req, res, sessionOptions);
-    const userId = session.id;
-    if (!session?.id) return res.status(401).json("Not authenticated");
+    const userId = req.userId;
+
 
     const userPost = await prisma.post.findMany({
       where: {
@@ -97,9 +92,7 @@ export async function savedPost(req, res) {
 }
 export async function getNotification(req, res) {
   try {
-    const session = await getIronSession(req, res, sessionOptions);
-    if (!session?.id) return res.status(401).json("Not authenticated");
-    const userId = session.id;
+    const userId = req.userId;
 
     const number = await prisma.chat.count({
       where: {

@@ -1,22 +1,19 @@
-import { sessionOptions } from "../lib/sessionOptions.js";
 import prisma from "../lib/prisma.js";
-import { getIronSession } from "iron-session";
 
 export async function getChats(req, res) {
   try {
-    const session = await getIronSession(req, res, sessionOptions);
-    if (!session.id) return res.status(401).json("Not Authorized");
+    const userId = req.userId;
 
     const chats = await prisma.chat.findMany({
       where: {
         userId: {
-          hasSome: [session.id],
+          hasSome: [userId],
         },
       },
     });
     const chatWithUser = await Promise.all(
       chats.map(async (chat) => {
-        const receiverId = chat.userId.find((id) => id !== session.id);
+        const receiverId = chat.userId.find((id) => id !== userId);
         const receiver = await prisma.user.findUnique({
           where: {
             id: receiverId,
@@ -38,13 +35,12 @@ export async function getChats(req, res) {
 }
 export async function getChat(req, res) {
   try {
-    const session = await getIronSession(req, res, sessionOptions);
-    if (!session.id) return res.status(401).json("Not Authorized");
+    const userId = req.userId;
     let chat = await prisma.chat.findUnique({
       where: {
         id: req.params.id,
         userId: {
-          hasSome: [session.id],
+          hasSome: [userId],
         },
       },
       include: {
@@ -62,17 +58,17 @@ export async function getChat(req, res) {
         },
       },
     });
-    if (!chat?.seenBy?.includes(session.id)) {
+    if (!chat?.seenBy?.includes(userId)) {
       chat = await prisma.chat.update({
         where: {
           id: req.params.id,
           userId: {
-            hasSome: [session.id],
+            hasSome: [userId],
           },
         },
         data: {
           seenBy: {
-            push: [session.id],
+            push: [userId],
           },
         },
         include: {
@@ -84,7 +80,7 @@ export async function getChat(req, res) {
         },
       });
     }
-    chat.receiver = chat.users.find((user) => user.id !== session.id);
+    chat.receiver = chat.users.find((user) => user.id !== userId);
     delete chat.users;
 
     return res.status(200).json(chat);
@@ -95,12 +91,11 @@ export async function getChat(req, res) {
 }
 export async function addChat(req, res) {
   try {
-    const session = await getIronSession(req, res, sessionOptions);
-    if (!session.id) return res.status(401).json("Not Authorized");
+    const userId = req.userId;
     const chat = await prisma.chat.findMany({
       where: {
         userId: {
-          hasSome: [session.id],
+          hasSome: [userId],
         },
       },
     });
@@ -110,7 +105,7 @@ export async function addChat(req, res) {
 
     const newChat = await prisma.chat.create({
       data: {
-        userId: [session.id, req.body.receiverId],
+        userId: [userId, req.body.receiverId],
       },
     });
     return res.status(201).json(newChat);
@@ -121,18 +116,17 @@ export async function addChat(req, res) {
 }
 export async function readChat(req, res) {
   try {
-    const session = await getIronSession(req, res, sessionOptions);
-    if (!session.id) return res.status(401).json("Not Authorized");
+    const userId = req.userId;
     const chat = await prisma.chat.update({
       where: {
         id: req.params.id,
         userId: {
-          hasSome: [session.id],
+          hasSome: [userId],
         },
       },
       data: {
         seenBy: {
-          push: [session.id],
+          push: [userId],
         },
       },
     });

@@ -1,16 +1,13 @@
 import prisma from "../lib/prisma.js";
-import { sessionOptions } from "../lib/sessionOptions.js";
-import { getIronSession } from "iron-session";
 
 export async function addMessage(req, res) {
   try {
-    const session = await getIronSession(req, res, sessionOptions);
-    if (!session.id) return res.status(401).json("Not Authorized");
+    const userId = req.userId;
     const chat = await prisma.chat.findUnique({
       where: {
         id: req.params.chatId,
         userId: {
-          hasSome: [session.id],
+          hasSome: [userId],
         },
       },
     });
@@ -18,7 +15,7 @@ export async function addMessage(req, res) {
     const message = await prisma.message.create({
       data: {
         text: req.body.text,
-        senderId: session.id,
+        senderId: userId,
         chatId: req.params.chatId,
       },
     });
@@ -26,7 +23,7 @@ export async function addMessage(req, res) {
     await prisma.chat.update({
       where: { id: req.params.chatId },
       data: {
-        seenBy: [session.id],
+        seenBy: [userId],
         lastMessage: req.body.text,
       },
     });

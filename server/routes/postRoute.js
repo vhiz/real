@@ -6,16 +6,16 @@ import {
   getPosts,
   updatePost,
 } from "../controller/postController.js";
+import { verifyToken } from "../middleware/verifyToken.js";
 const router = express.Router();
 
-router.post("/", createPost);
+router.post("/", verifyToken, createPost);
 
 router.get("/:id", getPost);
 
 router.get("/", getPosts);
 
+router.put("/:id", verifyToken, updatePost);
 
-router.put("/:id", updatePost);
-
-router.delete("/:id", deletePost);
+router.delete("/:id", verifyToken, deletePost);
 export default router;

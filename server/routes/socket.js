@@ -1,14 +1,14 @@
 import http from "http";
 import express from "express";
 import { Server } from "socket.io";
-import "dotenv/config.js";
+
 
 export const app = express();
 export const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["https://realestate-44bd0.web.app"],
+    origin: ["https://realestate-ef389.web.app"],
   },
 });
 let users = [];

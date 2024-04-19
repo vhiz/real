@@ -1,11 +1,8 @@
 import prisma from "../lib/prisma.js";
-import { getIronSession } from "iron-session";
-import { sessionOptions } from "../lib/sessionOptions.js";
-
+import jwt from "jsonwebtoken";
 export async function getPosts(req, res) {
   const query = req.query;
   try {
-    const session = await getIronSession(req, res, sessionOptions);
     const posts = await prisma.post.findMany({
       where: {
         city: {
@@ -21,21 +18,27 @@ export async function getPosts(req, res) {
         },
       },
     });
-    if (session?.id) {
-      const filtered = await Promise.all(
-        posts.map(async (post) => {
-          const bookmark = await prisma.bookmark.findUnique({
-            where: {
-              userId_postId: {
-                userId: session.id,
-                postId: post.id,
-              },
-            },
-          });
-          return { ...post, isSaved: bookmark ? true : false };
-        })
-      );
-      return res.status(200).json(filtered);
+
+    const token = req.cookies?.realEstate;
+    if (token) {
+      jwt.verify(token, process.env.KEY, async (err, payload) => {
+        if (!err) {
+          const filtered = await Promise.all(
+            posts.map(async (post) => {
+              const bookmark = await prisma.bookmark.findUnique({
+                where: {
+                  userId_postId: {
+                    userId: payload.id,
+                    postId: post.id,
+                  },
+                },
+              });
+              return { ...post, isSaved: bookmark ? true : false };
+            })
+          );
+          return res.status(200).json(filtered);
+        }
+      });
     } else {
       const filtered = posts.map((post) => ({ ...post, isSaved: false }));
       return res.status(200).json(filtered);
@@ -60,19 +63,24 @@ export async function getPost(req, res) {
         },
       },
     });
-    const session = await getIronSession(req, res, sessionOptions);
-    if (session?.id) {
-      const bookmark = await prisma.bookmark.findUnique({
-        where: {
-          userId_postId: {
-            userId: session.id,
-            postId: req.params.id,
-          },
-        },
+    const token = req.cookies?.realEstate;
+
+    if (token) {
+      jwt.verify(token, process.env.KEY, async (err, payload) => {
+        if (!err) {
+          const bookmark = await prisma.bookmark.findUnique({
+            where: {
+              userId_postId: {
+                userId: payload.id,
+                postId: req.params.id,
+              },
+            },
+          });
+          return res
+            .status(200)
+            .json({ ...post, isSaved: bookmark ? true : false });
+        }
       });
-      return res
-        .status(200)
-        .json({ ...post, isSaved: bookmark ? true : false });
     } else {
       return res.status(200).json({ ...post, isSaved: false });
     }
@@ -84,10 +92,8 @@ export async function getPost(req, res) {
 export async function createPost(req, res) {
   const body = req.body;
   try {
-    const session = await getIronSession(req, res, sessionOptions);
-    if (!session.id)
-      return res.status(401).json("You have to login to create a listing");
-    const userId = session.id;
+    const userId = req.userId;
+
     const newPost = await prisma.post.create({
       data: {
         ...body.postData,
@@ -105,9 +111,8 @@ export async function createPost(req, res) {
 }
 export async function updatePost(req, res) {
   try {
-    const session = await getIronSession(req, res, sessionOptions);
-    if (!session.id)
-      return res.status(401).json("You have to login to create a listing");
+    const userId = req.userId;
+
     res.status(200).json();
   } catch (error) {
     console.log(error);
@@ -116,12 +121,11 @@ export async function updatePost(req, res) {
 }
 export async function deletePost(req, res) {
   try {
-    const session = await getIronSession(req, res, sessionOptions);
+    const userId = req.userId;
     const post = await prisma.post.findUnique({
       where: { id: req.params.id },
     });
-    if (!session.id || post.userId !== session.id)
-      return res.status(401).json("Not Authorized");
+    if (post.userId !== userId) return res.status(401).json("Not Authorized");
     await prisma.post.delete({ where: { id: req.params.id } });
     res.status(200).json("Post Deleted");
   } catch (error) {

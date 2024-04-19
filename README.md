@@ -1,5 +1,5 @@
 <div align="center" id="top"> 
-  <img src="./.github/app.gif" alt="Realestate" />
+  <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQX-Loq3FyR2NhCHM2NuJmIJMFkMCxLt1K9qSDj07P0Aw&s" alt="Realestate" />
 
   &#xa0;
 
@@ -50,9 +50,9 @@ Describe your project
 
 ## :sparkles: Features ##
 
-:heavy_check_mark: Feature 1;\
-:heavy_check_mark: Feature 2;\
-:heavy_check_mark: Feature 3;
+:heavy_check_mark: Add listing;\
+:heavy_check_mark: create user;\
+:heavy_check_mark: chat sellers;
 
 ## :rocket: Technologies ##
 
@@ -84,9 +84,10 @@ $ npm install
 # Run the project
 $ npm run dev
 
-# Environmental Variables
+# Environmental Variables for the server folder
 $ DATABASE_URL (mongodb database must be atlas)
-$ SECRET_KEY (minimum of 32 characters)
+$ KEY (minimum of 32 characters)
+
 
 # The server will initialize in the <http://localhost:3000> for backend
 

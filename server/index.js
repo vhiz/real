@@ -13,7 +13,7 @@ import { server, app } from "./routes/socket.js";
 import cookieParser from "cookie-parser";
 app.use(helmet());
 app.use(
-  cors({ origin: ["https://realestate-44bd0.web.app"], credentials: true })
+  cors({ origin: ["https://realestate-ef389.web.app"], credentials: true })
 ); //
 app.use(express.json());
 app.use(cookieParser());

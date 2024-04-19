@@ -1,7 +1,6 @@
 import prisma from "../lib/prisma.js";
 import bcrypt from "bcrypt";
-import { getIronSession } from "iron-session";
-import { sessionOptions } from "../lib/sessionOptions.js";
+import jwt from "jsonwebtoken";
 
 export async function Register(req, res) {
   try {
@@ -47,16 +46,23 @@ export async function Login(req, res) {
     const verified = await bcrypt.compare(req.body.password, user.password);
     if (!verified) return res.status(409).json("Invalid credentials");
 
-    const session = await getIronSession(req, res, sessionOptions);
-
-    session.username = user.username;
-    session.email = user.email;
-    session.img = user.img;
-    session.id = user.id;
-
-    await session.save();
+    const token = jwt.sign(
+      {
+        id: user.id,
+      },
+      process.env.KEY,
+      { expiresIn: "1d" }
+    );
     const { password, ...others } = user;
-    return res.status(200).json(others);
+
+    return res
+      .cookie("realEstate", token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        maxAge: 24 * 60 * 60 * 1000,
+      })
+      .status(200)
+      .json(others);
   } catch (error) {
     console.log(error);
     res.status(400).json(error);
@@ -64,9 +70,7 @@ export async function Login(req, res) {
 }
 export async function Logout(req, res) {
   try {
-    const session = await getIronSession(req, res, sessionOptions);
-    session.destroy();
-    res.status(204).end();
+    return res.clearCookie("realEstate").status(204).end();
   } catch (error) {
     console.log(error);
     res.status(400).json(error);
