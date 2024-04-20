@@ -8,7 +8,7 @@ export const SocketContextProvider = ({ children }) => {
   const { currentUser } = useContext(AuthContext);
   const [onlineUsers, setOnlineUsers] = useState([]);
   useEffect(() => {
-    const newSocket = io("http://localhost:3000");
+    const newSocket = io("https://real-z0s3.onrender.com");
     setSocket(newSocket);
 
     return () => {
